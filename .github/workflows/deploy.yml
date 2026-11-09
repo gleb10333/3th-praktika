@@ -15,24 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create .env file from secrets
-        run: |
-          echo "Creating env file from GitHub Secrets..."
-          cat << EOF > .env
-          # Database configuration
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          # Application configuration
-          APP_PORT=${{ secrets.APP_PORT }}
-          APP_SECRET=${{ secrets.APP_SECRET }}
-          API_KEY=${{ secrets.API_KEY }}
-          # Docker configuration
-          COMPOSE_PROJECT_NAME=${{ env.COMPOSE_PROJECT_NAME }}
-          EOF
-          echo ".env file created successfully"
+- name: Create .env file from secrets
+    run: |
+      @"
+      DB_HOST=${{ secrets.DB_HOST }}
+      DB_PORT=${{ secrets.DB_PORT }}
+      DB_NAME=${{ secrets.DB_NAME }}
+      DB_USER=${{ secrets.DB_USER }}
+      DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+      APP_PORT=${{ secrets.APP_PORT }}
+      APP_SECRET=${{ secrets.APP_SECRET }}
+      API_KEY=${{ secrets.API_KEY }}
+      COMPOSE_PROJECT_NAME=${{ env.COMPOSE_PROJECT_NAME }}
+      "@ | Out-File -Encoding utf8 .env
+      Write-Host ".env file created successfully"
 
       - name: Deploy with Docker Compose
         run: |
