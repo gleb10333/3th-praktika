@@ -10,36 +10,38 @@ env:
 
 jobs:
   deploy-and-test:
-    runs-on: self-hosted # Запуск на вашем ПК (Критерий 1 — 3 балла)[cite: 15, 16]
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-- name: Create .env file from secrets
-    run: |
-      @"
-      DB_HOST=${{ secrets.DB_HOST }}
-      DB_PORT=${{ secrets.DB_PORT }}
-      DB_NAME=${{ secrets.DB_NAME }}
-      DB_USER=${{ secrets.DB_USER }}
-      DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-      APP_PORT=${{ secrets.APP_PORT }}
-      APP_SECRET=${{ secrets.APP_SECRET }}
-      API_KEY=${{ secrets.API_KEY }}
-      COMPOSE_PROJECT_NAME=${{ env.COMPOSE_PROJECT_NAME }}
-      "@ | Out-File -Encoding utf8 .env
-      Write-Host ".env file created successfully"
+      - name: Create .env file from secrets
+        run: |
+          @"
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          APP_PORT=${{ secrets.APP_PORT }}
+          APP_SECRET=${{ secrets.APP_SECRET }}
+          API_KEY=${{ secrets.API_KEY }}
+          COMPOSE_PROJECT_NAME=${{ env.COMPOSE_PROJECT_NAME }}
+          "@ | Out-File -Encoding utf8 .env
+          Write-Host ".env file created successfully"
 
       - name: Deploy with Docker Compose
+        shell: bash
         run: |
           echo "Starting application stack..."
-          docker-compose up -d # Запуск стека (Критерий 2 — 2 балла)[cite: 15, 17]
+          docker-compose up -d
           echo "Waiting for services to start..."
           sleep 30
           echo "Checking container status..."
           docker-compose ps
 
       - name: Verify containers are running
+        shell: bash
         run: |
           if docker-compose ps | grep -q "Up"; then
             echo "✅ All containers are running"
@@ -50,10 +52,10 @@ jobs:
           fi
 
       - name: Run application tests
+        shell: bash
         run: |
           echo "Running application tests..."
           
-          # Тест 1: Проверка работы приложения и БД (Критерий 4 — 2 балла)[cite: 15, 17]
           if curl -f http://localhost:${{ secrets.APP_PORT }}/health; then
             echo "✅ Web application is healthy"
           else
@@ -69,7 +71,6 @@ jobs:
             exit 1
           fi
 
-          # Тест 2: Сравнение данных БД и веб-интерфейса
           DB_COUNT=$(docker-compose exec -T db psql -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -t -c "SELECT COUNT(*) FROM items;" | tr -d ' ' || echo "0")
           WEB_COUNT=$(curl -s http://localhost:${{ secrets.APP_PORT }}/api/items/count)
           
@@ -84,6 +85,7 @@ jobs:
           fi
 
       - name: Create test report
+        shell: bash
         run: |
           cat > test-report.md << EOF
           # Deployment Test Report
@@ -106,10 +108,11 @@ jobs:
             .env
             test-report.md
             deployment-logs.txt
-          retention-days: 30 # Сохранение артефактов (Критерий 3 — 3 балла)[cite: 15, 18]
+          retention-days: 30
 
       - name: Save Docker logs
         if: always()
+        shell: bash
         run: |
           docker-compose logs > deployment-logs.txt
           docker images > docker-images.txt
@@ -126,6 +129,7 @@ jobs:
           retention-days: 30
 
       - name: Final summary
+        shell: bash
         run: |
           echo "Deployment Summary"
           echo "Self-Hosted Runner: Active"
